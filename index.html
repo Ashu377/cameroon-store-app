@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d6b5b" />
+  <title>MboaStock — Store management for Cameroon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">M</span><span>Mboa<span class="brand-accent">Stock</span></span></div>
+      <div class="store-switcher"><span class="store-avatar">PM</span><span><b>Petit Marché</b><small>Douala, Littoral</small></span><span class="chevron">⌄</span></div>
+      <nav aria-label="Main navigation">
+        <p class="nav-label">WORKSPACE</p>
+        <button class="nav-item active" data-view="dashboard"><span>▦</span> Overview</button>
+        <button class="nav-item" data-view="products"><span>▤</span> Products <em id="product-count">12</em></button>
+        <button class="nav-item" data-view="sales"><span>◒</span> Sales</button>
+        <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
+        <p class="nav-label">MANAGE</p>
+        <button class="nav-item" data-view="reports"><span>◩</span> Reports</button>
+        <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="help-card"><strong>Need a hand?</strong><p>Our team is here to help you grow.</p><button>Chat with support <span>→</span></button></div><div class="profile"><span class="profile-avatar">AN</span><span><b>Amélie N.</b><small>Owner</small></span><span class="dots">•••</span></div></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><button class="mobile-menu" id="mobile-menu">☰</button><div class="breadcrumb"><span>Workspace</span><b>/</b><strong id="page-title">Overview</strong></div><div class="top-actions"><button class="icon-btn" aria-label="Notifications">♧<i></i></button><div class="date-pill">◷ <span>30 Sept 2026</span></div></div></header>
+      <div class="content" id="content">
+        <section class="view active" id="dashboard-view">
+          <div class="page-heading"><div><p class="eyebrow">WEDNESDAY, 30 SEPTEMBER 2026</p><h1>Good morning, Amélie <span>✦</span></h1><p class="subtitle">Here’s what’s happening with your store today.</p></div><button class="primary-btn" id="quick-sale">＋ New sale</button></div>
+          <div class="stats-grid"><article class="stat-card"><div class="stat-top"><span>Total sales</span><span class="stat-icon green">↗</span></div><strong>1,284,500 <small>FCFA</small></strong><p class="positive">↑ 12.8% <span>vs last month</span></p></article><article class="stat-card"><div class="stat-top"><span>Orders</span><span class="stat-icon purple">▣</span></div><strong>186</strong><p class="positive">↑ 8.2% <span>vs last month</span></p></article><article class="stat-card"><div class="stat-top"><span>Customers</span><span class="stat-icon orange">♙</span></div><strong>324</strong><p class="positive">↑ 4.6% <span>vs last month</span></p></article><article class="stat-card"><div class="stat-top"><span>Low stock</span><span class="stat-icon red">!</span></div><strong id="low-stock-total">8</strong><p class="warning">Needs your attention</p></article></div>
+          <div class="dashboard-grid"><article class="panel chart-panel"><div class="panel-heading"><div><h2>Sales overview</h2><p>Revenue performance over time</p></div><select aria-label="Sales period"><option>Last 7 days</option><option>Last 30 days</option><option>This year</option></select></div><div class="chart-wrap"><div class="y-labels"><span>400k</span><span>300k</span><span>200k</span><span>100k</span><span>0</span></div><div class="chart"><div class="grid-lines"><i></i><i></i><i></i><i></i><i></i></div><svg viewBox="0 0 700 230" preserveAspectRatio="none" aria-label="Sales chart"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#22a887" stop-opacity=".27"/><stop offset="1" stop-color="#22a887" stop-opacity="0"/></linearGradient></defs><path class="area" d="M0,175 C50,166 63,142 112,153 S177,136 212,149 S260,102 305,126 S351,95 398,112 S447,83 488,105 S542,53 580,74 S638,36 700,48 V230 H0 Z"/><path class="line" d="M0,175 C50,166 63,142 112,153 S177,136 212,149 S260,102 305,126 S351,95 398,112 S447,83 488,105 S542,53 580,74 S638,36 700,48"/><circle cx="580" cy="74" r="5"/></svg><div class="x-labels"><span>24 Sep</span><span>25 Sep</span><span>26 Sep</span><span>27 Sep</span><span>28 Sep</span><span>29 Sep</span><span>30 Sep</span></div></div></div><div class="chart-legend"><span><i class="legend-dot"></i> Revenue</span><b>1,284,500 FCFA</b></div></article>
+            <article class="panel quick-panel"><div class="panel-heading"><div><h2>Quick actions</h2><p>Common tasks, right at hand</p></div></div><div class="quick-actions"><button id="add-product-action"><span class="action-icon teal">＋</span><span><b>Add a product</b><small>Update your inventory</small></span><strong>→</strong></button><button id="record-sale-action"><span class="action-icon blue">↗</span><span><b>Record a sale</b><small>Log a new transaction</small></span><strong>→</strong></button><button><span class="action-icon yellow">♙</span><span><b>Add a customer</b><small>Grow your customer list</small></span><strong>→</strong></button></div></article></div>
+          <div class="bottom-grid"><article class="panel inventory-panel"><div class="panel-heading"><div><h2>Inventory alerts</h2><p>Products that need restocking</p></div><button class="text-btn" data-view="products">View inventory →</button></div><div class="table-scroll"><table><thead><tr><th>PRODUCT</th><th>STOCK LEVEL</th><th>STATUS</th><th></th></tr></thead><tbody id="inventory-table"></tbody></table></div></article><article class="panel activity-panel"><div class="panel-heading"><div><h2>Recent activity</h2><p>Your latest store updates</p></div><button class="text-btn">View all →</button></div><div class="activity-list"><div><span class="activity-icon sale">↗</span><p><b>Sale recorded</b><small>2x Rice 25kg, 1x Oil 5L</small></p><time>10 min ago</time></div><div><span class="activity-icon product">＋</span><p><b>Product added</b><small>Beaufort Lager — 24 bottles</small></p><time>1 hr ago</time></div><div><span class="activity-icon customer">♙</span><p><b>New customer</b><small>Jean-Pierre Mbarga joined</small></p><time>3 hrs ago</time></div></div></article></div>
+        </section>
+        <section class="view" id="products-view"><div class="page-heading"><div><p class="eyebrow">CATALOG</p><h1>Products</h1><p class="subtitle">Manage your products and stock levels.</p></div><button class="primary-btn" id="add-product">＋ Add product</button></div><div class="panel product-panel"><div class="toolbar"><label class="search"><span>⌕</span><input id="product-search" placeholder="Search products..." /></label><select><option>All categories</option><option>Groceries</option><option>Beverages</option><option>Household</option></select></div><div class="table-scroll"><table><thead><tr><th>PRODUCT</th><th>CATEGORY</th><th>PRICE</th><th>IN STOCK</th><th>STATUS</th><th></th></tr></thead><tbody id="products-table"></tbody></table></div></div></section>
+        <section class="view placeholder-view" id="sales-view"><div class="empty-state"><span>◒</span><h1>Sales</h1><p>Track every transaction in one place. Your sales workspace is coming next.</p><button class="primary-btn" id="sales-empty">＋ Record a sale</button></div></section><section class="view placeholder-view" id="customers-view"><div class="empty-state"><span>♙</span><h1>Customers</h1><p>Build lasting relationships with your customers and keep their details organized.</p></div></section><section class="view placeholder-view" id="reports-view"><div class="empty-state"><span>◩</span><h1>Reports</h1><p>Understand your business with clear, useful reports.</p></div></section><section class="view placeholder-view" id="settings-view"><div class="empty-state"><span>⚙</span><h1>Settings</h1><p>Customize your store, currency, language and payment preferences.</p></div></section>
+      </div>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="modal"><div class="modal"><button class="close-modal" id="close-modal">×</button><p class="eyebrow">INVENTORY</p><h2>Add a product</h2><p class="modal-subtitle">Add an item to your store catalog.</p><form id="product-form"><label>Product name<input name="name" required placeholder="e.g. Cameroonian rice" /></label><div class="form-row"><label>Category<select name="category"><option>Groceries</option><option>Beverages</option><option>Household</option><option>Personal care</option></select></label><label>Price (FCFA)<input name="price" type="number" min="0" required placeholder="2500" /></label></div><div class="form-row"><label>Stock quantity<input name="stock" type="number" min="0" required placeholder="20" /></label><label>Reorder level<input name="reorder" type="number" min="0" value="5" required /></label></div><button class="primary-btn full" type="submit">Add to inventory</button></form></div></div>
+  <div class="toast" id="toast">Product added successfully <span>✓</span></div>
+  <script src="app.js"></script>
+</body>
+</html>
