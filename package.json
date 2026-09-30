@@ -1,0 +1,22 @@
+{
+  "name": "mboastock",
+  "version": "1.0.0",
+  "description": "MboaStock - store management app for Cameroonian micro and small businesses",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "cameroon",
+    "retail",
+    "inventory",
+    "sales",
+    "management"
+  ],
+  "author": "Ashu377",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

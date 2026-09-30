@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MboaStock</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <span class="brand-mark">M</span>
+          <span>Mboa<span class="brand-accent">Stock</span></span>
+        </div>
+
+        <div class="store-switcher">
+          <span class="store-avatar" id="store-avatar">PM</span>
+          <span>
+            <b id="store-name">Petit Marché</b>
+            <small id="store-city">Douala, Littoral</small>
+          </span>
+          <span class="chevron">⌄</span>
+        </div>
+
+        <nav aria-label="Main navigation">
+          <p class="nav-label">WORKSPACE</p>
+          <button class="nav-item active" data-view="dashboard"><span>▦</span> Overview</button>
+          <button class="nav-item" data-view="products"><span>▤</span> Products <em id="product-count">0</em></button>
+          <button class="nav-item" data-view="sales"><span>◒</span> Sales</button>
+          <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
+          <button class="nav-item" data-view="suppliers"><span>⎇</span> Suppliers</button>
+          <p class="nav-label">MANAGE</p>
+          <button class="nav-item" data-view="reports"><span>◩</span> Reports</button>
+          <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="help-card">
+            <strong>Need a hand?</strong>
+            <p>Grow faster with better inventory and cash flow visibility.</p>
+            <button>Chat with support <span>→</span></button>
+          </div>
+
+          <div class="profile">
+            <span class="profile-avatar" id="profile-avatar">AN</span>
+            <span>
+              <b id="owner-name">Amélie N.</b>
+              <small id="owner-role">Owner</small>
+            </span>
+            <span class="dots">•••</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobile-menu">☰</button>
+          <div class="breadcrumb">
+            <span>Workspace</span>
+            <b>/</b>
+            <strong id="page-title">Overview</strong>
+          </div>
+
+          <div class="top-actions">
+            <button class="icon-btn" aria-label="Notifications">♧<i></i></button>
+            <div class="date-pill">◷ <span id="today-date">Date</span></div>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="view active" id="dashboard-view"></section>
+          <section class="view" id="products-view"></section>
+          <section class="view" id="sales-view"></section>
+          <section class="view" id="customers-view"></section>
+          <section class="view" id="suppliers-view"></section>
+          <section class="view" id="reports-view"></section>
+          <section class="view" id="settings-view"></section>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast">Saved successfully<span>✓</span></div>
+    <script src="app.js"></script>
+  </body>
+</html>
