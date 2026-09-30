@@ -1,0 +1,30 @@
+# MboaStock
+
+A complete e-commerce and retail management app for small Cameroonian stores.
+
+## Features
+- Inventory management
+- Sales tracking
+- Customer management
+- Supplier records
+- Purchase order tracking
+- Expense tracking
+- Printable customer receipts
+- Persistent SQLite database
+
+## Login credentials
+- Email: admin@mboastock.cm
+- Password: admin123
+
+## Run locally
+```bash
+npm install
+npm start
+```
+
+Then open: http://localhost:3000
+
+## Tech stack
+- Node.js + Express
+- SQLite3
+- Vanilla JavaScript

@@ -1,6 +1,6 @@
 const state = {
-  user: null,
   activeView: 'dashboard',
+  user: null,
   dashboard: null,
   products: [],
   sales: [],
@@ -9,12 +9,12 @@ const state = {
   purchases: [],
   expenses: [],
   reports: null,
-  settings: null,
+  settings: null
 };
 
 const $ = (selector) => document.querySelector(selector);
 const money = (value) => `${new Intl.NumberFormat('en-US').format(Number(value || 0))} FCFA`;
-const esc = (str) => String(str ?? '').replace(/[&<>"']/g, (char) => ({
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
@@ -29,56 +29,48 @@ async function api(path, options = {}) {
   });
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || 'API request failed');
+  if (!response.ok) throw new Error(data.message || 'API error');
   return data;
 }
 
 function toast(message) {
   const el = $('#toast');
-  el.innerHTML = `${message} <span>✓</span>`;
+  el.innerHTML = `<span>✓</span> ${message}`;
   el.classList.add('show');
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => el.classList.remove('show'), 2800);
-}
-
-function updateHeader() {
-  const s = state.settings || {};
-  $('#store-name').textContent = s.storeName || 'Petit Marché';
-  $('#store-city').textContent = s.city || 'Douala';
-  $('#owner-name').textContent = state.user?.name || 'Amélie N.';
-  $('#owner-role').textContent = state.user?.role || 'Owner';
-  $('#product-count').textContent = state.products.length;
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
 function showView(view) {
   state.activeView = view;
-  document.querySelectorAll('.view').forEach((el) => el.classList.toggle('active', el.id === `${view}-view`));
-  document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.view === view));
+  document.querySelectorAll('.view').forEach((el) => {
+    el.classList.toggle('active', el.id === `${view}-view`);
+  });
+  document.querySelectorAll('.nav-item').forEach((el) => {
+    el.classList.toggle('active', el.dataset.view === view);
+  });
   $('#page-title').textContent = view.charAt(0).toUpperCase() + view.slice(1);
-  $('#sidebar').classList.remove('open');
-  renderView();
+  renderCurrent();
 }
 
-function renderView() {
-  switch (state.activeView) {
-    case 'dashboard': renderDashboard(); break;
-    case 'products': renderProducts(); break;
-    case 'sales': renderSales(); break;
-    case 'customers': renderCustomers(); break;
-    case 'suppliers': renderSuppliers(); break;
-    case 'purchases': renderPurchases(); break;
-    case 'reports': renderReports(); break;
-    case 'settings': renderSettings(); break;
-    default: renderDashboard();
-  }
+function renderCurrent() {
+  if (state.activeView === 'dashboard') renderDashboard();
+  if (state.activeView === 'products') renderProducts();
+  if (state.activeView === 'sales') renderSales();
+  if (state.activeView === 'customers') renderCustomers();
+  if (state.activeView === 'suppliers') renderSuppliers();
+  if (state.activeView === 'purchases') renderPurchases();
+  if (state.activeView === 'expenses') renderExpenses();
+  if (state.activeView === 'reports') renderReports();
+  if (state.activeView === 'settings') renderSettings();
 }
 
-function statCard(title, value, icon, badgeClass = 'mint') {
+function statCard(title, value, icon = '↗') {
   return `
     <article class="stat-card">
-      <div class="top">
+      <div class="stat-top">
         <span>${title}</span>
-        <span class="icon-badge ${badgeClass}">${icon}</span>
+        <span class="stat-icon green">${icon}</span>
       </div>
       <strong>${value}</strong>
     </article>
@@ -89,301 +81,244 @@ function renderDashboard() {
   const d = state.dashboard || {};
   const lowStockRows = (d.lowStock || []).slice(0, 5).map((p) => `
     <tr>
-      <td>${esc(p.name)}</td>
+      <td>${escapeHtml(p.name)}</td>
       <td><span class="status low">${p.stock} left</span></td>
     </tr>
   `).join('');
 
   $('#dashboard-view').innerHTML = `
-    <div class="page-header">
+    <div class="page-heading">
       <div>
-        <p class="eyebrow">Overview</p>
-        <h1>MboaStock dashboard</h1>
-        <p class="subtitle">A quick view of sales, stock, and operations.</p>
+        <p class="eyebrow">OVERVIEW</p>
+        <h1>Good morning! ✦</h1>
+        <p class="subtitle">Here's your store performance.</p>
       </div>
     </div>
-
     <div class="stats-grid">
-      ${statCard('Total Sales', money(d.totalSales), '↗', 'mint')}
-      ${statCard('Net Revenue', money(d.netRevenue), '↑', 'purple')}
-      ${statCard('Expenses', money(d.totalExpenses), '↓', 'orange')}
-      ${statCard('Low Stock', d.lowStockCount || 0, '⚠', 'red')}
+      ${statCard('Total Sales', money(d.totalSales || 0))}
+      ${statCard('Net Revenue', money(d.netRevenue || 0), '↑')}
+      ${statCard('Expenses', money(d.totalExpenses || 0), '↓')}
+      ${statCard('Low Stock Items', d.lowStockCount || 0, '⚠')}
     </div>
-
     <div class="dashboard-grid">
-      <div class="panel">
-        <div class="panel-header">
-          <h2>Low stock alert</h2>
-          <span class="panel-sub">Restock soon</span>
+      <article class="panel">
+        <div class="panel-heading">
+          <h2>Low Stock Alert</h2>
+          <p>Products that need restocking</p>
         </div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr><th>Product</th><th>Status</th></tr>
-            </thead>
+            <thead><tr><th>Product</th><th>Status</th></tr></thead>
             <tbody>
-              ${lowStockRows || '<tr><td colspan="2">No low-stock alerts</td></tr>'}
+              ${lowStockRows || '<tr><td colspan="2" style="text-align:center;color:#a8b6b2;">All products well stocked 🎉</td></tr>'}
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <h2>Quick actions</h2>
-          <span class="panel-sub">Common tasks</span>
+      </article>
+      <article class="panel">
+        <div class="panel-heading">
+          <h2>Quick Actions</h2>
+          <p>Common tasks</p>
         </div>
         <div class="quick-actions">
-          <button class="quick-action" data-action="quick-sale">
-            <span class="quick-icon turquoise">⬇</span>
-            <span>
-              <strong>Record sale</strong>
-              <small>Add a new transaction</small>
-            </span>
-          </button>
-          <button class="quick-action" data-action="quick-product">
-            <span class="quick-icon blue">＋</span>
-            <span>
-              <strong>Add product</strong>
-              <small>New inventory item</small>
-            </span>
-          </button>
-          <button class="quick-action" data-action="quick-purchase">
-            <span class="quick-icon gold">◫</span>
-            <span>
-              <strong>New purchase</strong>
-              <small>Order from supplier</small>
-            </span>
-          </button>
+          <button data-action="quick-sale"><span class="action-icon teal">↓</span><div><b>Record Sale</b><small>Add a transaction</small></div></button>
+          <button data-action="quick-product"><span class="action-icon blue">+</span><div><b>Add Product</b><small>New inventory item</small></div></button>
+          <button data-action="quick-purchase"><span class="action-icon yellow">📦</span><div><b>New Purchase Order</b><small>From supplier</small></div></button>
         </div>
-      </div>
+      </article>
     </div>
   `;
-
-  bindQuickActions();
+  bindActions();
 }
 
 function renderProducts() {
-  $('#products-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Catalog</p>
-        <h1>Products</h1>
-        <p class="subtitle">Inventory and pricing overview.</p>
-      </div>
-      <button class="primary-btn" data-action="add-product">+ Add product</button>
-    </div>
-
-    <div class="toolbar">
-      <div class="search-box">
-        <span>⌕</span>
-        <input id="product-search" placeholder="Search products..." />
-      </div>
-    </div>
-
-    <div class="table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Reorder</th><th>Status</th></tr>
-          </thead>
-          <tbody id="product-rows"></tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  const rows = state.products.filter((p) => p.name.toLowerCase().includes((document.getElementById('product-search')?.value || '').toLowerCase()));
-  $('#product-rows').innerHTML = rows.map((p) => {
-    const statusText = Number(p.stock) <= Number(p.reorder) ? 'Low stock' : 'In stock';
-    const statusClass = statusText === 'Low stock' ? 'low' : 'good';
+  const rows = state.products.map((p) => {
+    const status = Number(p.stock) <= Number(p.reorder) ? 'Low stock' : 'In stock';
     return `
       <tr>
-        <td>${esc(p.name)}</td>
-        <td>${esc(p.category)}</td>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.category)}</td>
         <td>${money(p.price)}</td>
         <td>${p.stock}</td>
         <td>${p.reorder}</td>
-        <td><span class="status ${statusClass}">${statusText}</span></td>
+        <td><span class="status ${status === 'Low stock' ? 'low' : 'good'}">${status}</span></td>
       </tr>
     `;
-  }).join('') || '<tr><td colspan="6">No products found</td></tr>';
+  }).join('');
 
-  $('#product-search')?.addEventListener('input', () => renderProducts());
+  $('#products-view').innerHTML = `
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">CATALOG</p>
+        <h1>Products</h1>
+        <p class="subtitle">Track stock and pricing.</p>
+      </div>
+      <button class="primary-btn" data-action="add-product">+ Add Product</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Reorder</th><th>Status</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#a8b6b2;">No products available</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
   bindActions();
 }
 
 function renderSales() {
-  $('#sales-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Transactions</p>
-        <h1>Sales</h1>
-        <p class="subtitle">Track every completed sale.</p>
-      </div>
-      <button class="primary-btn" data-action="add-sale">+ Record sale</button>
-    </div>
+  const rows = state.sales.map((s) => `
+    <tr>
+      <td><strong>${escapeHtml(s.reference)}</strong></td>
+      <td>${s.date}</td>
+      <td>${escapeHtml(s.customer)}</td>
+      <td>${escapeHtml(s.payment)}</td>
+      <td>${money(s.total)}</td>
+      <td><button class="secondary-btn" data-action="print-receipt" data-id="${s.id}" style="padding:6px 12px;font-size:11px;">🖨️ Print</button></td>
+    </tr>
+  `).join('');
 
-    <div class="table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Reference</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th>Receipt</th></tr>
-          </thead>
-          <tbody>
-            ${state.sales.map((sale) => `
-              <tr>
-                <td>${esc(sale.reference)}</td>
-                <td>${sale.date}</td>
-                <td>${esc(sale.customer)}</td>
-                <td>${esc(sale.payment)}</td>
-                <td>${money(sale.total)}</td>
-                <td><button class="secondary-btn" data-action="print-receipt" data-id="${sale.id}" style="padding:6px 10px; font-size:11px;">Print</button></td>
-              </tr>
-            `).join('') || '<tr><td colspan="6">No sales yet</td></tr>'}
-          </tbody>
-        </table>
-      </div>
+  $('#sales-view').innerHTML = `
+    <div class="page-heading">
+      <div><p class="eyebrow">TRANSACTIONS</p><h1>Sales</h1><p class="subtitle">Track all transactions.</p></div>
+      <button class="primary-btn" data-action="add-sale">+ Record Sale</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Reference</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th>Action</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#a8b6b2;">No sales yet</td></tr>'}</tbody>
+      </table>
     </div>
   `;
-
   bindActions();
 }
 
 function renderCustomers() {
-  $('#customers-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Customers</p>
-        <h1>Customer directory</h1>
-        <p class="subtitle">Keep contact details and loyalty data.</p>
-      </div>
-      <button class="primary-btn" data-action="add-customer">+ Add customer</button>
-    </div>
+  const rows = state.customers.map((c) => `
+    <tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${escapeHtml(c.loyalty)}</td></tr>
+  `).join('');
 
-    <div class="table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Loyalty</th></tr></thead>
-          <tbody>
-            ${state.customers.map((c) => `
-              <tr>
-                <td>${esc(c.name)}</td>
-                <td>${esc(c.phone)}</td>
-                <td>${esc(c.loyalty)}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="3">No customers yet</td></tr>'}
-          </tbody>
-        </table>
-      </div>
+  $('#customers-view').innerHTML = `
+    <div class="page-heading">
+      <div><p class="eyebrow">CONTACTS</p><h1>Customers</h1><p class="subtitle">Keep your customer directory organized.</p></div>
+      <button class="primary-btn" data-action="add-customer">+ Add Customer</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Loyalty</th></tr></thead><tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:#a8b6b2;">No customers yet</td></tr>'}</tbody></table>
     </div>
   `;
-
   bindActions();
 }
 
 function renderSuppliers() {
-  $('#suppliers-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Suppliers</p>
-        <h1>Supplier directory</h1>
-        <p class="subtitle">Manage your product suppliers.</p>
-      </div>
-      <button class="primary-btn" data-action="add-supplier">+ Add supplier</button>
-    </div>
+  const rows = state.suppliers.map((s) => `
+    <tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.phone)}</td><td>${escapeHtml(s.contact)}</td></tr>
+  `).join('');
 
-    <div class="table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Contact</th></tr></thead>
-          <tbody>
-            ${state.suppliers.map((s) => `
-              <tr>
-                <td>${esc(s.name)}</td>
-                <td>${esc(s.phone)}</td>
-                <td>${esc(s.contact)}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="3">No suppliers yet</td></tr>'}
-          </tbody>
-        </table>
-      </div>
+  $('#suppliers-view').innerHTML = `
+    <div class="page-heading">
+      <div><p class="eyebrow">PARTNERS</p><h1>Suppliers</h1><p class="subtitle">Track your purchase partners.</p></div>
+      <button class="primary-btn" data-action="add-supplier">+ Add Supplier</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Contact</th></tr></thead><tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:#a8b6b2;">No suppliers yet</td></tr>'}</tbody></table>
     </div>
   `;
-
   bindActions();
 }
 
 function renderPurchases() {
-  $('#purchases-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Purchases</p>
-        <h1>Purchase orders</h1>
-        <p class="subtitle">Track supplier orders and status.</p>
-      </div>
-      <button class="primary-btn" data-action="add-purchase">+ Create purchase</button>
-    </div>
+  const rows = state.purchases.map((purchase) => `
+    <tr>
+      <td>${escapeHtml(purchase.reference)}</td>
+      <td>${purchase.date}</td>
+      <td>${escapeHtml(purchase.status)}</td>
+      <td>${money(purchase.total)}</td>
+      <td>
+        <select data-purchase-status="${purchase.id}">
+          <option value="Pending" ${purchase.status === 'Pending' ? 'selected' : ''}>Pending</option>
+          <option value="Received" ${purchase.status === 'Received' ? 'selected' : ''}>Received</option>
+          <option value="Cancelled" ${purchase.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
+      </td>
+    </tr>
+  `).join('');
 
-    <div class="table-panel">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Reference</th><th>Supplier</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
-          <tbody>
-            ${state.purchases.map((p) => {
-              const supplier = state.suppliers.find((s) => s.id === p.supplier_id);
-              return `
-                <tr>
-                  <td>${esc(p.reference)}</td>
-                  <td>${esc(supplier?.name || 'Unknown')}</td>
-                  <td>${p.date}</td>
-                  <td>${money(p.total)}</td>
-                  <td><span class="status ${p.status === 'Received' ? 'good' : 'low'}">${p.status}</span></td>
-                </tr>
-              `;
-            }).join('') || '<tr><td colspan="5">No purchases yet</td></tr>'}
-          </tbody>
-        </table>
-      </div>
+  $('#purchases-view').innerHTML = `
+    <div class="page-heading">
+      <div><p class="eyebrow">PROCUREMENT</p><h1>Purchases</h1><p class="subtitle">Supplier purchase tracking.</p></div>
+      <button class="primary-btn" data-action="add-purchase">+ New Purchase</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Reference</th><th>Date</th><th>Status</th><th>Total</th><th>Update</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#a8b6b2;">No purchases yet</td></tr>'}</tbody>
+      </table>
     </div>
   `;
 
+  document.querySelectorAll('[data-purchase-status]').forEach((select) => {
+    select.addEventListener('change', async (event) => {
+      const id = event.target.dataset.purchaseStatus;
+      const status = event.target.value;
+      try {
+        await api(`/api/purchases/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+        toast('Purchase status updated');
+        await refresh();
+      } catch (error) {
+        toast(error.message);
+      }
+    });
+  });
+
+  bindActions();
+}
+
+function renderExpenses() {
+  const rows = state.expenses.map((expense) => `
+    <tr>
+      <td>${escapeHtml(expense.label)}</td>
+      <td>${escapeHtml(expense.category)}</td>
+      <td>${money(expense.amount)}</td>
+      <td>${expense.date}</td>
+    </tr>
+  `).join('');
+
+  $('#expenses-view').innerHTML = `
+    <div class="page-heading">
+      <div><p class="eyebrow">CASHFLOW</p><h1>Expenses</h1><p class="subtitle">Track business expenses.</p></div>
+      <button class="primary-btn" data-action="add-expense">+ Add Expense</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Label</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" style="text-align:center;color:#a8b6b2;">No expenses recorded</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
   bindActions();
 }
 
 function renderReports() {
   const r = state.reports || {};
+  const payments = (r.salesByPayment || []).map((row) => `
+    <tr><td>${escapeHtml(row.payment)}</td><td>${row.count}</td><td>${money(row.total || 0)}</td></tr>
+  `).join('');
+
   $('#reports-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Analytics</p>
-        <h1>Reports</h1>
-        <p class="subtitle">Operational and financial overview.</p>
-      </div>
+    <div class="page-heading">
+      <div><p class="eyebrow">ANALYTICS</p><h1>Reports</h1><p class="subtitle">Business performance overview.</p></div>
     </div>
-
     <div class="stats-grid">
-      ${statCard('Sales', money(r.salesTotal), '↗', 'mint')}
-      ${statCard('Expenses', money(r.expenseTotal), '↓', 'orange')}
-      ${statCard('Net', money(r.net), '≈', 'purple')}
+      ${statCard('Total Sales', money(r.salesTotal || 0))}
+      ${statCard('Total Expenses', money(r.expenseTotal || 0), '↓')}
+      ${statCard('Net Profit', money(r.net || 0), '↗')}
     </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Sales by payment method</h2>
-      </div>
+    <div class="panel" style="margin-top:20px;">
+      <div class="panel-heading"><h2>Sales by Payment Method</h2></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Method</th><th>Count</th><th>Total</th></tr></thead>
-          <tbody>
-            ${(r.salesByPayment || []).map((row) => `
-              <tr>
-                <td>${esc(row.payment)}</td>
-                <td>${row.count}</td>
-                <td>${money(row.total)}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="3">No data</td></tr>'}
-          </tbody>
+          <tbody>${payments || '<tr><td colspan="3" style="text-align:center;color:#a8b6b2;">No payment data yet</td></tr>'}</tbody>
         </table>
       </div>
     </div>
@@ -393,183 +328,178 @@ function renderReports() {
 function renderSettings() {
   const s = state.settings || {};
   $('#settings-view').innerHTML = `
-    <div class="page-header">
-      <div>
-        <p class="eyebrow">Preferences</p>
-        <h1>Store settings</h1>
-        <p class="subtitle">Update store identity and contact information.</p>
-      </div>
+    <div class="page-heading">
+      <div><p class="eyebrow">PREFERENCES</p><h1>Settings</h1><p class="subtitle">Configure your store.</p></div>
     </div>
-
-    <div class="panel">
-      <form id="settings-form">
+    <div style="max-width:650px;">
+      <form id="settings-form" class="form-panel">
         <div class="form-grid">
-          <label>
-            Store name
-            <input name="storeName" value="${esc(s.storeName || '')}" />
-          </label>
-          <label>
-            City
-            <input name="city" value="${esc(s.city || '')}" />
-          </label>
-          <label>
-            Currency
-            <input name="currency" value="${esc(s.currency || '')}" />
-          </label>
-          <label>
-            Language
-            <select name="language">
-              <option value="English" ${s.language === 'English' ? 'selected' : ''}>English</option>
-              <option value="French" ${s.language === 'French' ? 'selected' : ''}>French</option>
-            </select>
-          </label>
-          <label style="grid-column: 1 / -1;">
-            Phone
-            <input name="phone" value="${esc(s.phone || '')}" />
-          </label>
+          <label>Store Name<input type="text" name="storeName" value="${escapeHtml(s.storeName || '')}" /></label>
+          <label>City<input type="text" name="city" value="${escapeHtml(s.city || '')}" /></label>
+          <label>Currency<input type="text" name="currency" value="${escapeHtml(s.currency || '')}" /></label>
+          <label>Language<select name="language">
+            <option value="English" ${s.language === 'English' ? 'selected' : ''}>English</option>
+            <option value="French" ${s.language === 'French' ? 'selected' : ''}>Français</option>
+          </select></label>
+          <label style="grid-column:1/-1;">Phone<input type="text" name="phone" value="${escapeHtml(s.phone || '')}" /></label>
         </div>
-
-        <div class="actions-row">
-          <button type="submit" class="primary-btn">Save settings</button>
-        </div>
+        <div class="actions-row"><button class="primary-btn" type="submit">Save Settings</button></div>
       </form>
     </div>
   `;
 
-  $('#settings-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = new FormData(e.target);
-    const payload = Object.fromEntries(form.entries());
-
+  $('#settings-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const payload = Object.fromEntries(form);
     try {
       await api('/api/settings', { method: 'PUT', body: JSON.stringify(payload) });
       toast('Settings saved');
-      await loadAll();
+      await refresh();
     } catch (error) {
       toast(error.message);
     }
   });
 }
 
-function modal(title, fields, onSubmit) {
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `
+function buildModal(id, title, fields, submitHandler) {
+  const modal = document.createElement('div');
+  modal.id = id;
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `
     <div class="modal">
-      <button class="close-btn" type="button" aria-label="Close">×</button>
-      <p class="eyebrow">Add</p>
+      <button class="close-modal" type="button" data-close="${id}">×</button>
+      <p class="eyebrow">ADD</p>
       <h2>${title}</h2>
-      <form>
-        <div class="form-grid">
-          ${fields}
-        </div>
+      <form id="${id}-form">
+        ${fields}
         <div class="actions-row">
-          <button type="button" class="secondary-btn close-modal">Cancel</button>
+          <button type="button" class="secondary-btn" data-close="${id}">Cancel</button>
           <button type="submit" class="primary-btn">Save</button>
         </div>
       </form>
     </div>
   `;
 
-  document.body.appendChild(backdrop);
+  document.body.appendChild(modal);
 
-  backdrop.querySelector('.close-btn').addEventListener('click', () => backdrop.remove());
-  backdrop.querySelector('.close-modal').addEventListener('click', () => backdrop.remove());
-  backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) backdrop.remove();
+  modal.querySelector('[data-close]').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) modal.remove();
   });
 
-  backdrop.querySelector('form').addEventListener('submit', async (event) => {
+  modal.querySelector('form').addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = new FormData(event.target);
-    const payload = Object.fromEntries(form.entries());
-
+    const payload = Object.fromEntries(form);
     try {
-      await onSubmit(payload);
-      backdrop.remove();
-      toast('Saved successfully');
-      await loadAll();
+      await submitHandler(payload);
+      modal.remove();
+      toast('Saved!');
+      await refresh();
     } catch (error) {
       toast(error.message);
     }
   });
 }
 
-function openAddDialog(type) {
+function openDialog(type) {
   if (type === 'product') {
-    modal('Add product', `
-      <label>Name<input name="name" required /></label>
-      <label>Category<input name="category" value="Groceries" /></label>
-      <label>Price<input name="price" type="number" min="0" required /></label>
-      <label>Stock<input name="stock" type="number" min="0" required /></label>
-      <label>Reorder level<input name="reorder" type="number" min="0" required /></label>
-    `, async (payload) => api('/api/products', { method: 'POST', body: JSON.stringify(payload) }));
+    buildModal('product-modal', 'Add Product', `
+      <div class="form-grid">
+        <label>Name<input name="name" required /></label>
+        <label>Category<input name="category" value="Groceries" /></label>
+        <label>Price<input type="number" name="price" value="0" required /></label>
+        <label>Stock<input type="number" name="stock" value="0" required /></label>
+        <label>Reorder<input type="number" name="reorder" value="0" required /></label>
+      </div>
+    `, (payload) => api('/api/products', { method: 'POST', body: JSON.stringify(payload) }));
+    return;
   }
 
   if (type === 'sale') {
-    modal('Record sale', `
-      <label>Product<select name="selectedProductId">${state.products.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label>
-      <label>Quantity<input name="quantity" type="number" min="1" required /></label>
-      <label>Payment<select name="payment"><option>Cash</option><option>Mobile Money</option><option>Card</option></select></label>
-      <label>Customer<input name="customer" placeholder="Walk-in customer" /></label>
-    `, async (payload) => api('/api/sales', { method: 'POST', body: JSON.stringify(payload) }));
+    const productOptions = state.products.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    buildModal('sale-modal', 'Record Sale', `
+      <div class="form-grid">
+        <label>Product<select name="selectedProductId" required>${productOptions || '<option value="">No products</option>'}</select></label>
+        <label>Quantity<input type="number" name="quantity" min="1" value="1" required /></label>
+        <label>Payment<select name="payment"><option>Cash</option><option>Mobile Money</option><option>Card</option></select></label>
+        <label>Customer<input name="customer" placeholder="Leave blank for walk-in" /></label>
+      </div>
+    `, (payload) => api('/api/sales', { method: 'POST', body: JSON.stringify(payload) }));
+    return;
   }
 
   if (type === 'customer') {
-    modal('Add customer', `
-      <label>Name<input name="name" required /></label>
-      <label>Phone<input name="phone" /></label>
-      <label>Loyalty<select name="loyalty"><option>Bronze</option><option>Silver</option><option>Gold</option></select></label>
-    `, async (payload) => api('/api/customers', { method: 'POST', body: JSON.stringify(payload) }));
+    buildModal('customer-modal', 'Add Customer', `
+      <div class="form-grid">
+        <label>Name<input name="name" required /></label>
+        <label>Phone<input name="phone" /></label>
+        <label>Loyalty<select name="loyalty"><option>Bronze</option><option>Silver</option><option>Gold</option></select></label>
+      </div>
+    `, (payload) => api('/api/customers', { method: 'POST', body: JSON.stringify(payload) }));
+    return;
   }
 
   if (type === 'supplier') {
-    modal('Add supplier', `
-      <label>Name<input name="name" required /></label>
-      <label>Phone<input name="phone" /></label>
-      <label>Contact<input name="contact" /></label>
-    `, async (payload) => api('/api/suppliers', { method: 'POST', body: JSON.stringify(payload) }));
+    buildModal('supplier-modal', 'Add Supplier', `
+      <div class="form-grid">
+        <label>Name<input name="name" required /></label>
+        <label>Phone<input name="phone" /></label>
+        <label>Contact<input name="contact" /></label>
+      </div>
+    `, (payload) => api('/api/suppliers', { method: 'POST', body: JSON.stringify(payload) }));
+    return;
   }
 
   if (type === 'purchase') {
-    modal('Create purchase order', `
-      <label>Supplier<select name="supplier_id">${state.suppliers.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
-      <label>Notes<textarea name="notes"></textarea></label>
-      <label>Item list<textarea name="items" placeholder='[{"name":"Rice","quantity":10,"price":15000}]'></textarea></label>
+    const supplierOptions = state.suppliers.map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+    buildModal('purchase-modal', 'New Purchase Order', `
+      <div class="form-grid">
+        <label>Supplier<select name="supplier_id" required>${supplierOptions || '<option value="">No suppliers</option>'}</select></label>
+        <label>Notes<textarea name="notes" style="min-height:100px;" placeholder="Optional notes"></textarea></label>
+      </div>
     `, async (payload) => {
-      let items = [];
-      try {
-        items = payload.items ? JSON.parse(payload.items) : [];
-      } catch (error) {
-        throw new Error('Invalid JSON item list');
-      }
+      const items = [{ name: 'Supplier stock order', quantity: 1, price: 0 }];
       return api('/api/purchases', { method: 'POST', body: JSON.stringify({ ...payload, items }) });
     });
+    return;
+  }
+
+  if (type === 'expense') {
+    buildModal('expense-modal', 'Add Expense', `
+      <div class="form-grid">
+        <label>Label<input name="label" required /></label>
+        <label>Category<input name="category" value="General" /></label>
+        <label>Amount<input type="number" name="amount" value="0" required /></label>
+        <label>Date<input type="date" name="date" value="${new Date().toISOString().slice(0, 10)}" /></label>
+      </div>
+    `, (payload) => api('/api/expenses', { method: 'POST', body: JSON.stringify(payload) }));
   }
 }
 
-function bindQuickActions() {
-  document.querySelectorAll('[data-action="quick-sale"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('sale')));
-  document.querySelectorAll('[data-action="quick-product"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('product')));
-  document.querySelectorAll('[data-action="quick-purchase"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('purchase')));
-}
-
 function bindActions() {
-  document.querySelectorAll('[data-action="add-product"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('product')));
-  document.querySelectorAll('[data-action="add-sale"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('sale')));
-  document.querySelectorAll('[data-action="add-customer"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('customer')));
-  document.querySelectorAll('[data-action="add-supplier"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('supplier')));
-  document.querySelectorAll('[data-action="add-purchase"]').forEach((btn) => btn.addEventListener('click', () => openAddDialog('purchase')));
+  document.querySelectorAll('[data-view]').forEach((btn) => {
+    btn.onclick = () => showView(btn.dataset.view);
+  });
+
+  document.querySelectorAll('[data-action="quick-sale"]').forEach((btn) => btn.addEventListener('click', () => openDialog('sale')));
+  document.querySelectorAll('[data-action="quick-product"]').forEach((btn) => btn.addEventListener('click', () => openDialog('product')));
+  document.querySelectorAll('[data-action="quick-purchase"]').forEach((btn) => btn.addEventListener('click', () => openDialog('purchase')));
+
+  document.querySelectorAll('[data-action="add-product"]').forEach((btn) => btn.addEventListener('click', () => openDialog('product')));
+  document.querySelectorAll('[data-action="add-sale"]').forEach((btn) => btn.addEventListener('click', () => openDialog('sale')));
+  document.querySelectorAll('[data-action="add-customer"]').forEach((btn) => btn.addEventListener('click', () => openDialog('customer')));
+  document.querySelectorAll('[data-action="add-supplier"]').forEach((btn) => btn.addEventListener('click', () => openDialog('supplier')));
+  document.querySelectorAll('[data-action="add-purchase"]').forEach((btn) => btn.addEventListener('click', () => openDialog('purchase')));
+  document.querySelectorAll('[data-action="add-expense"]').forEach((btn) => btn.addEventListener('click', () => openDialog('expense')));
+
   document.querySelectorAll('[data-action="print-receipt"]').forEach((btn) => {
     btn.addEventListener('click', () => window.open(`/api/receipt/${btn.dataset.id}`, '_blank'));
   });
-
-  document.querySelectorAll('.nav-item').forEach((btn) => {
-    btn.addEventListener('click', () => showView(btn.dataset.view));
-  });
 }
 
-async function loadAll() {
+async function refresh() {
   try {
     const [dashboard, products, sales, customers, suppliers, purchases, expenses, reports, settings] = await Promise.all([
       api('/api/dashboard'),
@@ -593,23 +523,24 @@ async function loadAll() {
     state.reports = reports;
     state.settings = settings;
 
-    updateHeader();
-    renderView();
+    $('#store-name').textContent = settings.storeName || 'Petit Marché';
+    $('#store-city').textContent = `${settings.city || 'Douala'}, Cameroon`;
+    $('#product-count').textContent = String(products.length);
+
+    renderCurrent();
   } catch (error) {
+    console.error(error);
     toast(error.message);
   }
 }
 
-async function loginUser(email, password) {
+async function login(email, password) {
   try {
     const result = await api('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-    if (result.ok) {
-      state.user = result.user;
-      $('#login-shell').classList.add('hidden');
-      $('#app-shell').classList.remove('hidden');
-      updateHeader();
-      await loadAll();
-    }
+    state.user = result.user;
+    $('#login-shell').classList.add('hidden');
+    $('#app-shell').classList.remove('hidden');
+    await refresh();
   } catch (error) {
     toast(error.message);
   }
@@ -622,28 +553,24 @@ function logout() {
   $('#login-form').reset();
 }
 
-function bindAuth() {
-  $('#login-form')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const form = new FormData(event.target);
-    const email = form.get('email');
-    const password = form.get('password');
-    loginUser(email, password);
-  });
-
-  $('#logout-btn')?.addEventListener('click', logout);
-  $('#mobile-menu')?.addEventListener('click', () => $('#sidebar').classList.toggle('open'));
-}
-
 function init() {
   $('#today-date').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  bindAuth();
+
+  $('#login-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const payload = Object.fromEntries(data);
+    await login(payload.email, payload.password);
+  });
+
+  $('#logout-btn').addEventListener('click', logout);
+  $('#mobile-menu').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+
+  document.querySelectorAll('[data-view]').forEach((el) => {
+    el.addEventListener('click', () => showView(el.dataset.view));
+  });
+
+  renderDashboard();
 }
 
 init();
-
-setTimeout(() => {
-  const loginForm = $('#login-form');
-  if (loginForm) loginForm.dispatchEvent(new Event('submit', { cancelable: true }));
-}, 100);
-
