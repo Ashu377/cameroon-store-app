@@ -1,25 +1,146 @@
-const state = { activeView: 'dashboard', dashboard: null, products: [], sales: [], customers: [], suppliers: [], reports: null, settings: null };
-const $ = selector => document.querySelector(selector);
-const money = value => `${new Intl.NumberFormat('en-US').format(Number(value) || 0)} FCFA`;
-const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
-async function api(path, options = {}) { const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Request failed'); return data; }
-function toast(message) { const el = $('#toast'); el.firstChild.textContent = `${message} `; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2400); }
-function showView(view) { state.activeView = view; document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `${view}-view`)); document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === view)); $('#page-title').textContent = view[0].toUpperCase() + view.slice(1); renderCurrent(); $('#sidebar').classList.remove('open'); }
-function renderCurrent() { if (state.activeView === 'dashboard') renderDashboard(); if (state.activeView === 'products') renderProducts(); if (state.activeView === 'sales') renderSales(); if (state.activeView === 'customers') renderCustomers(); if (state.activeView === 'suppliers') renderSuppliers(); if (state.activeView === 'reports') renderReports(); if (state.activeView === 'settings') renderSettings(); }
-function updateHeader() { const settings = state.settings || {}; $('#store-name').textContent = settings.storeName || 'Petit Marché'; $('#store-city').textContent = `${settings.city || 'Douala'}, Cameroon`; $('#store-avatar').textContent = (settings.storeName || 'PM').split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase(); $('#product-count').textContent = state.products.length; }
-function stat(title, value, icon = '↗') { return `<article class="stat-card"><div class="stat-top"><span>${title}</span><span class="stat-icon green">${icon}</span></div><strong>${value}</strong></article>`; }
-function renderDashboard() { const d = state.dashboard || {}; $('#dashboard-view').innerHTML = `<div class="page-heading"><div><p class="eyebrow">BUSINESS OVERVIEW</p><h1>Good morning, Amélie <span>✦</span></h1><p class="subtitle">Here is your snapshot for ${escapeHtml(d.store?.city || 'Douala')}.</p></div><button class="primary-btn" data-action="sale">＋ Record sale</button></div><div class="stats-grid">${stat('Total sales', money(d.totalSales))}${stat('Net revenue', money(d.netRevenue), '▣')}${stat('Products', d.productsCount, '♙')}${stat('Low stock', d.lowStockCount, '!')}</div><div class="bottom-grid"><article class="panel"><div class="panel-heading"><div><h2>Inventory alerts</h2><p>Products close to reorder point</p></div><button class="secondary-btn" data-view="products">View all</button></div><table><thead><tr><th>Product</th><th>Stock</th><th>Status</th></tr></thead><tbody>${(d.lowStock || []).map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.stock}</td><td><span class="status low">Low stock</span></td></tr>`).join('') || '<tr><td colspan="3">No urgent inventory issues</td></tr>'}</tbody></table></article><article class="panel"><div class="panel-heading"><div><h2>Quick actions</h2><p>Common store tasks</p></div></div><div class="quick-actions"><button data-action="product"><span class="action-icon teal">＋</span><span><b>Add product</b><small>Update inventory</small></span></button><button data-action="sale"><span class="action-icon blue">↗</span><span><b>Record sale</b><small>Log payment</small></span></button><button data-action="customer"><span class="action-icon yellow">♙</span><span><b>Add customer</b><small>Grow your list</small></span></button></div></article></div>`; bindDynamic(); }
-function renderProducts() { $('#products-view').innerHTML = `<div class="page-heading"><div><p class="eyebrow">CATALOG</p><h1>Products</h1><p class="subtitle">Track stock and pricing.</p></div><button class="primary-btn" data-action="product">＋ Add product</button></div><div class="panel book-panel"><div class="toolbar"><label class="search">⌕ <input id="product-search" placeholder="Search products..." /></label></div><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="product-rows"></tbody></table></div></div>`; renderProductRows(); $('#product-search').addEventListener('input', renderProductRows); bindDynamic(); }
-function renderProductRows() { const query = ($('#product-search')?.value || '').toLowerCase(); $('#product-rows').innerHTML = state.products.filter(p => p.name.toLowerCase().includes(query)).map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.category)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td><span class="status ${p.stock <= p.reorder ? 'low' : 'good'}">${p.stock <= p.reorder ? 'Low stock' : 'In stock'}</span></td><td><button class="secondary-btn delete-product" data-id="${p.id}">Delete</button></td></tr>`).join('') || '<tr><td colspan="6">No products found.</td></tr>'; document.querySelectorAll('.delete-product').forEach(button => button.addEventListener('click', async () => { await api(`/api/products/${button.dataset.id}`, { method: 'DELETE' }); await refresh(); toast('Product removed'); })); }
-function renderSales() { $('#sales-view').innerHTML = `<div class="page-heading"><div><p class="eyebrow">TRANSACTIONS</p><h1>Sales</h1><p class="subtitle">Cash, Mobile Money, and Orange Money payments.</p></div><button class="primary-btn" data-action="sale">＋ Record sale</button></div><div class="stats-grid">${stat('Total sales', money(state.sales.reduce((sum, s) => sum + s.total, 0)))}${stat('Transactions', state.sales.length, '▣')}</div><div class="panel"><h2>Recent sales</h2><table><thead><tr><th>Reference</th><th>Customer</th><th>Payment</th><th>Total</th><th>Date</th></tr></thead><tbody>${state.sales.map(s => `<tr><td>${s.reference}</td><td>${escapeHtml(s.customer)}</td><td>${escapeHtml(s.payment)}</td><td>${money(s.total)}</td><td>${s.date}</td></tr>`).join('') || '<tr><td colspan="5">No sales recorded yet.</td></tr>'}</tbody></table></div>`; bindDynamic(); }
-function simpleList(view, title, subtitle, rows, columns, action) { $(`#${view}-view`).innerHTML = `<div class="page-heading"><div><p class="eyebrow">${view.toUpperCase()}</p><h1>${title}</h1><p class="subtitle">${subtitle}</p></div><button class="primary-btn" data-action="${action}">＋ Add ${view.slice(0, -1)}</button></div><div class="panel"><table><thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${columns.length}">No records yet.</td></tr>`}</tbody></table></div>`; bindDynamic(); }
-function renderCustomers() { simpleList('customers', 'Customers', 'Keep your customer directory organized.', state.customers.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${escapeHtml(c.loyalty)}</td></tr>`).join(''), ['Name','Phone','Loyalty'], 'customer'); }
-function renderSuppliers() { simpleList('suppliers', 'Suppliers', 'Track your purchase partners.', state.suppliers.map(s => `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.phone)}</td><td>${escapeHtml(s.contact)}</td></tr>`).join(''), ['Name','Phone','Contact'], 'supplier'); }
-function renderReports() { const r = state.reports || {}; $('#reports-view').innerHTML = `<div class="page-heading"><div><p class="eyebrow">ANALYTICS</p><h1>Reports</h1><p class="subtitle">Understand your store performance.</p></div></div><div class="stats-grid">${stat('Sales total', money(r.salesTotal))}${stat('Expenses', money(r.expenseTotal), '▣')}${stat('Net', money(r.net), '♙')}</div>`; }
-function renderSettings() { const s = state.settings || {}; $('#settings-view').innerHTML = `<div class="page-heading"><div><p class="eyebrow">PREFERENCES</p><h1>Settings</h1><p class="subtitle">Configure your store details.</p></div></div><div class="panel form-panel"><form id="settings-form" class="form-grid"><label>Store name<input name="storeName" value="${escapeHtml(s.storeName)}" required></label><label>City<input name="city" value="${escapeHtml(s.city)}" required></label><label>Currency<select name="currency"><option>FCFA</option><option>USD</option></select></label><label>Language<select name="language"><option>English</option><option>French</option></select></label><label>Phone<input name="phone" value="${escapeHtml(s.phone)}"></label><div class="actions-row"><button class="primary-btn">Save settings</button></div></form></div>`; $('#settings-form').addEventListener('submit', async e => { e.preventDefault(); state.settings = await api('/api/settings', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) }); updateHeader(); toast('Settings saved'); }); }
-function bindDynamic() { document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view))); document.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', () => openDialog(b.dataset.action))); }
-function modal(id, title, fields, submit) { const html = `<div class="modal-backdrop open" id="${id}"><div class="modal"><button class="close-modal" data-close="${id}">×</button><p class="eyebrow">MBOASTOCK</p><h2>${title}</h2><form id="${id}-form" class="form-grid">${fields}<div class="actions-row"><button class="primary-btn">Save</button></div></form></div></div>`; document.body.insertAdjacentHTML('beforeend', html); $(`[data-close="${id}"]`).addEventListener('click', () => $(`#${id}`).remove()); $(`#${id}-form`).addEventListener('submit', submit); }
-function openDialog(type) { if (type === 'product') modal('product-modal', 'Add product', '<label>Name<input name="name" required></label><label>Category<input name="category" value="Groceries" required></label><label>Price (FCFA)<input name="price" type="number" min="0" required></label><label>Stock<input name="stock" type="number" min="0" required></label><label>Reorder level<input name="reorder" type="number" min="0" value="5" required></label>', async e => { e.preventDefault(); await api('/api/products', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) }); $(`#product-modal`).remove(); await refresh(); toast('Product added'); }); if (type === 'sale') { const options = state.products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.stock} available)</option>`).join(''); modal('sale-modal', 'Record sale', `<label>Product<select name="selectedProductId">${options}</select></label><label>Quantity<input name="quantity" type="number" min="1" value="1" required></label><label>Payment<select name="payment"><option>Cash</option><option>Mobile Money</option><option>Orange Money</option></select></label><label>Customer<input name="customer" placeholder="Walk-in customer"></label>`, async e => { e.preventDefault(); try { await api('/api/sales', { method: 'POST', body: JSON.stringify({ ...Object.fromEntries(new FormData(e.target)), quantity: Number(new FormData(e.target).get('quantity')) }) }); $(`#sale-modal`).remove(); await refresh(); toast('Sale recorded'); } catch (error) { toast(error.message); } }); } if (type === 'customer') modal('customer-modal', 'Add customer', '<label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Loyalty<select name="loyalty"><option>Silver</option><option>Gold</option><option>Platinum</option></select></label>', async e => { e.preventDefault(); await api('/api/customers', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) }); $(`#customer-modal`).remove(); await refresh(); toast('Customer added'); }); if (type === 'supplier') modal('supplier-modal', 'Add supplier', '<label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Contact<input name="contact" required></label>', async e => { e.preventDefault(); await api('/api/suppliers', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) }); $(`#supplier-modal`).remove(); await refresh(); toast('Supplier added'); }); }
-async function refresh() { const [dashboard, products, sales, customers, suppliers, reports, settings] = await Promise.all(['/api/dashboard','/api/products','/api/sales','/api/customers','/api/suppliers','/api/reports','/api/settings'].map(api)); Object.assign(state, { dashboard, products, sales, customers, suppliers, reports, settings }); updateHeader(); renderCurrent(); }
-async function init() { $('#today-date').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); document.querySelectorAll('.nav-item').forEach(b => b.addEventListener('click', () => showView(b.dataset.view))); $('#mobile-menu').addEventListener('click', () => $('#sidebar').classList.toggle('open')); try { await refresh(); } catch (error) { console.error(error); toast('Start the API with npm start'); } }
-init();
+* { box-sizing: border-box; }
+:root {
+  --ink: #18332e;
+  --muted: #71817c;
+  --line: #e7eeeb;
+  --bg: #f7faf9;
+  --teal: #0d6b5b;
+  --mint: #e9f6f1;
+  --orange: #ff925c;
+  --shadow: 0 12px 35px rgba(35, 72, 62, 0.06);
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.login-shell {
+  position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(135deg, #0d6b5b, #192f2d);
+  z-index: 50;
+}
+.login-slot.hidden, .app-shell.hidden { display: none; }
+.login-shell.hidden { display: none; }
+.login-card {
+  width: min(90vw, 420px); background: white; border-radius: 18px; padding: 26px; box-shadow: 0 24px 50px rgba(0,0,0,.18);
+}
+.login-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 24px; margin-bottom: 20px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: var(--teal); color: white; }
+.brand-accent { color: #08a37d; }
+.login-card h1 { margin: 0 0 18px; font-size: 28px; }
+.login-card label { display: block; margin: 14px 0; font-size: 12px; color: var(--muted); font-weight: 700; }
+.login-card input { display: block; width: 100%; margin-top: 6px; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--line); }
+.full { width: 100%; }
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 250px; background: #fff; border-right: 1px solid var(--line);
+  padding: 18px 14px; display: flex; flex-direction: column; flex-shrink: 0;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; padding: 8px 8px 20px; }
+.store-switcher {
+  display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 8px; margin-bottom: 24px; background: #fff;
+}
+.store-avatar, .profile-avatar { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; background: #f4d5b4; color: #a45d2f; }
+.store-switcher b, .profile b { display: block; }
+.store-switcher small, .profile small { display: block; color: var(--muted); font-size: 11px; }
+.chevron { margin-left: auto; color: var(--muted); }
+.nav-label { margin: 20px 10px 8px; font-size: 10px; letter-spacing: 1.2px; color: #95a3a0; text-transform: uppercase; font-weight: 700; }
+.nav-item {
+  width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: transparent;
+  padding: 11px 12px; border-radius: 9px; color: #5c756f; text-align: left; margin: 2px 0;
+}
+.nav-item em { margin-left: auto; font-style: normal; font-size: 10px; background: #f0f5f2; padding: 2px 6px; border-radius: 10px; }
+.nav-item.active, .nav-item:hover { background: var(--mint); color: var(--teal); font-weight: 600; }
+.sidebar-bottom { margin-top: auto; }
+.help-card { margin: 10px 0 16px; background: #f4faf7; border-radius: 12px; padding: 16px; }
+.help-card strong { font-size: 12px; }
+.help-card p { margin: 8px 0 12px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.help-card button { background: none; border: 0; color: var(--teal); font-weight: 700; padding: 0; }
+.profile { display: flex; align-items: center; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.logout-btn { margin-left: auto; background: #f3f7f6; border: 0; border-radius: 7px; padding: 8px 10px; color: var(--ink); font-size: 11px; }
+.dots { margin-left: auto; color: #a5b5b1; }
+.main-content { flex:1; min-width:0; }
+.topbar {
+  display:flex; align-items:center; justify-content:space-between; background:#fff; border-bottom:1px solid var(--line);
+  height:76px; padding:0 4%;
+}
+.breadcrumb { display:flex; gap:10px; align-items:center; color:#99a9a4; }
+.breadcrumb strong { color: var(--ink); }
+.top-actions { display:flex; align-items:center; gap:18px; }
+.icon-btn { background:none; border:none; font-size:20px; color:#697d78; position:relative; }
+.icon-btn i { position:absolute; right:2px; top:0; width:7px;height:7px;border-radius:50%;background:#f58055; }
+.date-pill { color:#788d87; font-size:12px; }
+.mobile-menu { display:none; background:none; border:none; font-size:22px; }
+.content { padding: 30px 4%; }
+.view { display:none; }
+.view.active { display:block; }
+.page-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:22px; }
+.eyebrow { font-size:10px; letter-spacing:1.2px; color:#9aa9a1; text-transform: uppercase; margin:0 0 8px; font-weight:700; }
+.page-heading h1 { margin:0; font-size:28px; }
+.subtitle { margin:8px 0 0; color:var(--muted); }
+.primary-btn, .secondary-btn { border:0; border-radius:8px; padding: 11px 16px; font-weight:700; }
+.primary-btn { background: var(--teal); color:#fff; }
+.secondary-btn { background: #eef5f3; color: var(--teal); }
+.stats-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px; margin-bottom: 20px; }
+.stat-card, .panel { background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow: var(--shadow); }
+.stat-card { padding:18px 20px; }
+.stat-top { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-bottom:12px; }
+.stat-icon { width:26px; height:26px; border-radius:8px; display:grid; place-items:center; font-weight:700; }
+.green { background:#e7f5ef; color:#1b9a7a; }
+.purple { background:#f0ecff; color:#8469d6; }
+.orange { background:#fff0e8; color:#e88852; }
+.red { background:#fff0ef; color:#ee756b; }
+.stat-card strong { font-size: 22px; display:block; }
+.stat-card p { margin:8px 0 0; font-size:11px; }
+.positive { color:#169575; }
+.warning { color:var(--muted); }
+.dashboard-grid { display:grid; grid-template-columns: 1.6fr 1fr; gap:20px; margin-bottom: 20px; }
+.bottom-grid { display:grid; grid-template-columns: 1.3fr 1fr; gap:20px; }
+.panel { padding: 18px 20px; }
+.panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.panel h2 { margin:0; font-size:15px; }
+.panel-heading p { margin:5px 0 0; color:var(--muted); font-size:11px; }
+.table-wrap { overflow-x:auto; }
+table { width:100%; min-width:560px; border-collapse:collapse; margin-top:16px; }
+th { text-align:left; font-size:9px; letter-spacing:1px; color:#9aa9a1; text-transform:uppercase; padding:0 10px 12px; border-bottom:1px solid var(--line); }
+td { padding:12px 10px; border-bottom:1px solid #edf2f0; }
+.status { display:inline-block; padding:4px 8px; border-radius:12px; font-size:10px; font-weight:700; }
+.status.low { background:#fff1eb; color:#d96c4e; }
+.status.good { background:#e9f7f1; color:#19896f; }
+.stock-bar { display:inline-block; width:80px; height:5px; background:#eef1ef; border-radius:10px; margin-right:6px; }
+.stock-bar i { display:block; height:100%; border-radius:10px; background:#f28b65; }
+.toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--line); }
+.search { width: 250px; display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+.search input, .toolbar select, .form-grid input, .form-grid select { width:100%; border:1px solid var(--line); border-radius:7px; background:#fff; padding:10px; }
+.search input { border:0; padding:0; outline:0; }
+.form-grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+.form-grid label { display:block; color:#6b7d79; font-size:11px; font-weight:700; }
+.form-grid input, .form-grid select { margin-top:7px; }
+.form-panel { padding: 20px; }
+.actions-row { display:flex; gap:10px; justify-content:space-between; margin-top:16px; }
+.quick-actions { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+.quick-actions button { display:flex; align-items:center; gap:10px; width:100%; background:transparent; border-bottom:1px solid var(--line); padding:10px 0; text-align:left; }
+.quick-actions button:last-child { border-bottom:0; }
+.action-icon { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; font-size:18px; }
+.teal { background:#e7f6f0; color:#159574; }
+.blue { background:#ebf2ff; color:#5a82d7; }
+.yellow { background:#fff5dc; color:#dc9a25; }
+.toast {
+  position:fixed; right:24px; bottom:20px; background:#173d35; color:#fff; padding:12px 16px; border-radius:8px;
+  box-shadow: var(--shadow); transform: translateY(120px); transition: .3s; font-size:12px; display:flex; align-items:center; gap:8px;
+}
+.toast.show { transform: translateY(0); }
+.toast span { color:#72d4b8; }
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(16, 41, 35, 0.7); display: grid; place-items: center; padding: 20px; z-index: 30;
+}
+.modal {
+  background: white; width: min(92vw, 520px); border-radius: 16px; padding: 24px; position: relative;
+}
+.close-modal { position: absolute; top: 12px; right: 14px; border: 0; background: transparent; font-size: 26px; }
+@media (max-width: 980px) { .sidebar { position:fixed; z-index:4; transform:translateX(-100%); transition:.2s; height:100%; } .sidebar.open { transform:translateX(0); } .mobile-menu { display:block; } .dashboard-grid, .bottom-grid, .stats-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .stats-grid, .dashboard-grid, .bottom-grid, .form-grid { grid-template-columns: 1fr; } .page-heading { flex-direction:column; align-items:flex-start; } .toolbar { flex-direction:column; align-items:stretch; } .search { width:100%; } }

@@ -1,86 +1,202 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MboaStock</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar" id="sidebar">
-        <div class="brand">
-          <span class="brand-mark">M</span>
-          <span>Mboa<span class="brand-accent">Stock</span></span>
-        </div>
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
 
-        <div class="store-switcher">
-          <span class="store-avatar" id="store-avatar">PM</span>
-          <span>
-            <b id="store-name">Petit Marché</b>
-            <small id="store-city">Douala, Littoral</small>
-          </span>
-          <span class="chevron">⌄</span>
-        </div>
+const app = express();
+const PORT = process.env.PORT || 3000;
+const dataDir = path.join(__dirname, 'data');
+const dataFile = path.join(dataDir, 'store.json');
+const DEFAULT_LOGIN = { email: 'admin@mboastock.cm', password: 'admin123' };
 
-        <nav aria-label="Main navigation">
-          <p class="nav-label">WORKSPACE</p>
-          <button class="nav-item active" data-view="dashboard"><span>▦</span> Overview</button>
-          <button class="nav-item" data-view="products"><span>▤</span> Products <em id="product-count">0</em></button>
-          <button class="nav-item" data-view="sales"><span>◒</span> Sales</button>
-          <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
-          <button class="nav-item" data-view="suppliers"><span>⎇</span> Suppliers</button>
-          <p class="nav-label">MANAGE</p>
-          <button class="nav-item" data-view="reports"><span>◩</span> Reports</button>
-          <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
-        </nav>
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-        <div class="sidebar-bottom">
-          <div class="help-card">
-            <strong>Need a hand?</strong>
-            <p>Grow faster with better inventory and cash flow visibility.</p>
-            <button>Chat with support <span>→</span></button>
-          </div>
+const defaults = {
+  user: { name: 'Amélie N.', role: 'Owner', email: DEFAULT_LOGIN.email },
+  settings: { storeName: 'Petit Marché', city: 'Douala', currency: 'FCFA', language: 'English', phone: '+237 6XX XXX XXX' },
+  products: [
+    { id: 'p1', name: 'Rice 25kg', category: 'Groceries', price: 18500, stock: 3, reorder: 10 },
+    { id: 'p2', name: 'Vegetable Oil 5L', category: 'Groceries', price: 7200, stock: 6, reorder: 8 },
+    { id: 'p3', name: 'Beaufort Lager', category: 'Beverages', price: 750, stock: 24, reorder: 12 },
+    { id: 'p4', name: 'Mocaf Bread', category: 'Groceries', price: 500, stock: 4, reorder: 10 },
+    { id: 'p5', name: 'Laundry Soap', category: 'Household', price: 900, stock: 18, reorder: 8 },
+    { id: 'p6', name: 'Onions 1kg', category: 'Groceries', price: 1000, stock: 7, reorder: 10 },
+    { id: 'p7', name: 'Water 1.5L', category: 'Beverages', price: 400, stock: 36, reorder: 12 },
+    { id: 'p8', name: 'Toothpaste', category: 'Personal care', price: 1800, stock: 2, reorder: 6 }
+  ],
+  customers: [
+    { id: 'c1', name: 'Jean-Pierre Mbarga', phone: '+237 656 123 456', loyalty: 'Gold' },
+    { id: 'c2', name: 'Amina Tchoua', phone: '+237 677 987 654', loyalty: 'Silver' }
+  ],
+  suppliers: [
+    { id: 's1', name: 'Bafoussam Food Hub', phone: '+237 699 555 111', contact: 'Nadine' },
+    { id: 's2', name: 'Douala Household Supply', phone: '+237 690 222 333', contact: 'Martin' }
+  ],
+  sales: [
+    { id: 'sale-1001', reference: 'SALE-1001', date: '2026-09-30', payment: 'Mobile Money', customer: 'Jean-Pierre Mbarga', total: 27000, items: [{ name: 'Rice 25kg', quantity: 1 }, { name: 'Water 1.5L', quantity: 6 }] },
+    { id: 'sale-1002', reference: 'SALE-1002', date: '2026-09-29', payment: 'Cash', customer: 'Amina Tchoua', total: 8200, items: [{ name: 'Toothpaste', quantity: 2 }, { name: 'Water 1.5L', quantity: 3 }] }
+  ],
+  expenses: [
+    { id: 'e1', label: 'Electricity bill', amount: 22000, date: '2026-09-28' },
+    { id: 'e2', label: 'Transport', amount: 12500, date: '2026-09-29' }
+  ]
+};
 
-          <div class="profile">
-            <span class="profile-avatar" id="profile-avatar">AN</span>
-            <span>
-              <b id="owner-name">Amélie N.</b>
-              <small id="owner-role">Owner</small>
-            </span>
-            <span class="dots">•••</span>
-          </div>
-        </div>
-      </aside>
+function readData() {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, JSON.stringify(defaults, null, 2));
+  return JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+}
 
-      <main class="main-content">
-        <header class="topbar">
-          <button class="mobile-menu" id="mobile-menu">☰</button>
-          <div class="breadcrumb">
-            <span>Workspace</span>
-            <b>/</b>
-            <strong id="page-title">Overview</strong>
-          </div>
+function writeData(data) {
+  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+}
 
-          <div class="top-actions">
-            <button class="icon-btn" aria-label="Notifications">♧<i></i></button>
-            <div class="date-pill">◷ <span id="today-date">Date</span></div>
-          </div>
-        </header>
+function makeId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
 
-        <div class="content">
-          <section class="view active" id="dashboard-view"></section>
-          <section class="view" id="products-view"></section>
-          <section class="view" id="sales-view"></section>
-          <section class="view" id="customers-view"></section>
-          <section class="view" id="suppliers-view"></section>
-          <section class="view" id="reports-view"></section>
-          <section class="view" id="settings-view"></section>
-        </div>
-      </main>
-    </div>
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, message: 'MboaStock API is running' });
+});
 
-    <div class="toast" id="toast">Saved successfully<span>✓</span></div>
-    <script src="app.js"></script>
-  </body>
-</html>
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body || {};
+  if (email === DEFAULT_LOGIN.email && password === DEFAULT_LOGIN.password) {
+    const data = readData();
+    res.json({ ok: true, user: { name: data.user.name, role: data.user.role, email: data.user.email } });
+  } else {
+    res.status(401).json({ ok: false, message: 'Invalid email or password' });
+  }
+});
+
+app.get('/api/dashboard', (req, res) => {
+  const data = readData();
+  const totalSales = data.sales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+  const totalExpenses = data.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const lowStock = data.products.filter(product => Number(product.stock) <= Number(product.reorder));
+  res.json({
+    totalSales,
+    totalExpenses,
+    netRevenue: totalSales - totalExpenses,
+    lowStockCount: lowStock.length,
+    productsCount: data.products.length,
+    customersCount: data.customers.length,
+    store: data.settings,
+    lowStock
+  });
+});
+
+app.get('/api/products', (req, res) => res.json(readData().products));
+app.post('/api/products', (req, res) => {
+  const data = readData();
+  const body = req.body || {};
+  const product = {
+    id: makeId('p'),
+    name: String(body.name || '').trim(),
+    category: body.category || 'Other',
+    price: Number(body.price) || 0,
+    stock: Number(body.stock) || 0,
+    reorder: Number(body.reorder) || 0
+  };
+
+  if (!product.name) return res.status(400).json({ message: 'Product name is required' });
+
+  data.products.unshift(product);
+  writeData(data);
+  res.status(201).json(product);
+});
+app.delete('/api/products/:id', (req, res) => {
+  const data = readData();
+  data.products = data.products.filter(item => item.id !== req.params.id);
+  writeData(data);
+  res.json({ ok: true });
+});
+
+app.get('/api/sales', (req, res) => res.json(readData().sales));
+app.post('/api/sales', (req, res) => {
+  const data = readData();
+  const { selectedProductId, payment = 'Cash', customer = '', quantity } = req.body || {};
+  const product = data.products.find(item => item.id === selectedProductId);
+  const amount = Number(quantity);
+
+  if (!product) return res.status(404).json({ message: 'Product not found' });
+  if (!Number.isInteger(amount) || amount < 1) return res.status(400).json({ message: 'Quantity must be a positive whole number' });
+  if (amount > Number(product.stock)) return res.status(400).json({ message: 'Not enough stock available' });
+
+  product.stock -= amount;
+  const sale = {
+    id: makeId('sale'),
+    reference: `SALE-${String(Date.now()).slice(-6)}`,
+    date: new Date().toISOString().slice(0, 10),
+    payment,
+    customer: customer || 'Walk-in customer',
+    total: product.price * amount,
+    items: [{ name: product.name, quantity: amount }]
+  };
+
+  data.sales.unshift(sale);
+  writeData(data);
+  res.status(201).json(sale);
+});
+
+app.get('/api/customers', (req, res) => res.json(readData().customers));
+app.post('/api/customers', (req, res) => {
+  const data = readData();
+  const customer = { id: makeId('c'), ...req.body };
+  data.customers.unshift(customer);
+  writeData(data);
+  res.status(201).json(customer);
+});
+
+app.get('/api/suppliers', (req, res) => res.json(readData().suppliers));
+app.post('/api/suppliers', (req, res) => {
+  const data = readData();
+  const supplier = { id: makeId('s'), ...req.body };
+  data.suppliers.unshift(supplier);
+  writeData(data);
+  res.status(201).json(supplier);
+});
+
+app.get('/api/expenses', (req, res) => res.json(readData().expenses));
+app.post('/api/expenses', (req, res) => {
+  const data = readData();
+  const expense = { id: makeId('e'), ...req.body };
+  data.expenses.unshift(expense);
+  writeData(data);
+  res.status(201).json(expense);
+});
+
+app.get('/api/reports', (req, res) => {
+  const data = readData();
+  const salesTotal = data.sales.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+  const expenseTotal = data.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const productsSold = data.sales.flatMap(sale => sale.items || []).reduce((acc, item) => {
+    acc[item.name] = (acc[item.name] || 0) + Number(item.quantity || 0);
+    return acc;
+  }, {});
+  const bestSeller = Object.entries(productsSold).sort((a, b) => b[1] - a[1])[0];
+
+  res.json({
+    salesTotal,
+    expenseTotal,
+    net: salesTotal - expenseTotal,
+    bestSeller: bestSeller ? { name: bestSeller[0], qty: bestSeller[1] } : null
+  });
+});
+
+app.get('/api/settings', (req, res) => res.json(readData().settings));
+app.put('/api/settings', (req, res) => {
+  const data = readData();
+  data.settings = { ...data.settings, ...(req.body || {}) };
+  writeData(data);
+  res.json(data.settings);
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`MboaStock running on http://localhost:${PORT}`);
+});
