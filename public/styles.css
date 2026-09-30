@@ -2,19 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>MboaStock</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="login-shell" class="login-shell visible">
+    <div id="login-shell" class="login-shell">
       <div class="login-card">
-        <div class="login-brand">
-          <span class="brand-mark">M</span>
-          <span>Mboa<span class="brand-accent">Stock</span></span>
+        <div class="brand-row">
+          <span class="logo">M</span>
+          <div>
+            <strong>Mboa<span>Stock</span></strong>
+          </div>
         </div>
-        <p class="eyebrow">Store management</p>
+
+        <p class="eyebrow">STORE MANAGEMENT</p>
         <h1>Welcome back</h1>
+
         <form id="login-form">
           <label>
             Email
@@ -24,85 +28,90 @@
             Password
             <input type="password" name="password" value="admin123" required />
           </label>
-          <button type="submit" class="primary-btn full">Log in</button>
+          <button class="primary-btn full" type="submit">Log in</button>
         </form>
       </div>
     </div>
 
-    <div class="app-shell hidden" id="app-shell">
-      <aside class="sidebar" id="sidebar">
-        <div class="brand">
-          <span class="brand-mark">M</span>
-          <span>Mboa<span class="brand-accent">Stock</span></span>
+    <div id="app-shell" class="app-shell hidden">
+      <aside id="sidebar" class="sidebar">
+        <div class="brand-row top-brand">
+          <span class="logo">M</span>
+          <div>
+            <strong>Mboa<span>Stock</span></strong>
+          </div>
         </div>
 
-        <div class="store-switcher">
-          <span class="store-avatar" id="store-avatar">PM</span>
-          <span>
-            <b id="store-name">Petit Marché</b>
-            <small id="store-city">Douala, Cameroon</small>
-          </span>
-          <span class="chevron">⌄</span>
+        <div class="store-chip">
+          <span class="icon-box store-icon">PM</span>
+          <div>
+            <strong id="store-name">Petit Marché</strong>
+            <small id="store-city">Douala</small>
+          </div>
         </div>
 
-        <nav aria-label="Main navigation">
-          <p class="nav-label">WORKSPACE</p>
-          <button class="nav-item active" data-view="dashboard"><span>▦</span> Overview</button>
-          <button class="nav-item" data-view="products"><span>▤</span> Products <em id="product-count">0</em></button>
-          <button class="nav-item" data-view="sales"><span>◒</span> Sales</button>
-          <button class="nav-item" data-view="customers"><span>♙</span> Customers</button>
-          <button class="nav-item" data-view="suppliers"><span>⎇</span> Suppliers</button>
-          <p class="nav-label">MANAGE</p>
-          <button class="nav-item" data-view="reports"><span>◩</span> Reports</button>
-          <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+        <nav class="nav">
+          <p class="nav-label">Workspace</p>
+          <button class="nav-item active" data-view="dashboard">Overview</button>
+          <button class="nav-item" data-view="products">Products <span id="product-count">0</span></button>
+          <button class="nav-item" data-view="sales">Sales</button>
+          <button class="nav-item" data-view="customers">Customers</button>
+          <button class="nav-item" data-view="suppliers">Suppliers</button>
+          <button class="nav-item" data-view="purchases">Purchases</button>
+          <button class="nav-item" data-view="reports">Reports</button>
+          <button class="nav-item" data-view="settings">Settings</button>
         </nav>
 
-        <div class="sidebar-bottom">
-          <div class="help-card">
+        <div class="sidebar-footer">
+          <div class="help-box">
             <strong>Need a hand?</strong>
-            <p>Grow faster with better inventory and cash flow visibility.</p>
-            <button>Chat with support <span>→</span></button>
+            <p>Grow revenue with stronger inventory visibility.</p>
+            <button>Support →</button>
           </div>
 
-          <div class="profile">
-            <span class="profile-avatar" id="profile-avatar">AN</span>
-            <span>
-              <b id="owner-name">Amélie N.</b>
+          <div class="user-box">
+            <span class="icon-box user-icon">AN</span>
+            <div>
+              <strong id="owner-name">Amélie N.</strong>
               <small id="owner-role">Owner</small>
-            </span>
-            <button class="logout-btn" id="logout-btn">Log out</button>
+            </div>
+            <button id="logout-btn" class="logout-btn">Log out</button>
           </div>
         </div>
       </aside>
 
-      <main class="main-content">
+      <main class="main-panel">
         <header class="topbar">
-          <button class="mobile-menu" id="mobile-menu">☰</button>
-          <div class="breadcrumb">
-            <span>Workspace</span>
-            <b>/</b>
-            <strong id="page-title">Overview</strong>
+          <div class="top-left">
+            <button id="mobile-menu" class="mobile-menu">☰</button>
+            <div class="crumbs">
+              <span>Workspace</span>
+              <span>/</span>
+              <strong id="page-title">Overview</strong>
+            </div>
           </div>
 
           <div class="top-actions">
-            <button class="icon-btn" aria-label="Notifications">♧<i></i></button>
-            <div class="date-pill">◷ <span id="today-date">Date</span></div>
+            <button class="icon-btn" aria-label="Inbox">🔔</button>
+            <span class="date-pill" id="today-date">Date</span>
           </div>
         </header>
 
         <div class="content">
-          <section class="view active" id="dashboard-view"></section>
-          <section class="view" id="products-view"></section>
-          <section class="view" id="sales-view"></section>
-          <section class="view" id="customers-view"></section>
-          <section class="view" id="suppliers-view"></section>
-          <section class="view" id="reports-view"></section>
-          <section class="view" id="settings-view"></section>
+          <section id="dashboard-view" class="view active"></section>
+          <section id="products-view" class="view"></section>
+          <section id="sales-view" class="view"></section>
+          <section id="customers-view" class="view"></section>
+          <section id="suppliers-view" class="view"></section>
+          <section id="purchases-view" class="view"></section>
+          <section id="reports-view" class="view"></section>
+          <section id="settings-view" class="view"></section>
         </div>
       </main>
     </div>
 
-    <div class="toast" id="toast">Saved successfully<span>✓</span></div>
+    <div id="toast" class="toast">Saved successfully <span>✓</span></div>
+
     <script src="app.js"></script>
   </body>
 </html>
